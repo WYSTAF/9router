@@ -302,6 +302,9 @@ const PROVIDER_MODELS_CONFIG = {
   nvidia: createOpenAIModelsConfig("https://integrate.api.nvidia.com/v1/models"),
   assemblyai: createOpenAIModelsConfig("https://api.assemblyai.com/v1/models"),
   "vercel-ai-gateway": createOpenAIModelsConfig("https://ai-gateway.vercel.sh/v1/models"),
+  // OpenAI-compatible aggregator. Model ids are bare (no provider prefix) and
+  // are fetched live; the curated seed above is the offline fallback.
+  tokenharbor: createOpenAIModelsConfig("https://tokenharbor.ai/v1/models"),
   kimchi: {
     customResolver: async (connection) => {
       const result = await resolveKimchiModels({
