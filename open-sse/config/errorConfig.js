@@ -75,6 +75,39 @@ export const ERROR_RULES = [
   { status: 429, backoff: true },
 ];
 
+/**
+ * Text rules for failures that are scoped to ONE MODEL rather than to the
+ * credential. Matched before ERROR_RULES when deciding whether a COMBO should
+ * advance to its next member (#4271).
+ *
+ * Without these, a combo whose first member is unusable for the current account
+ * — an unentitled slug, or a retired model — returns that member's 4xx verbatim
+ * and never reaches the healthy members behind it. A genuine request-scoped
+ * fault (context overflow, malformed body) stays non-fallback: no other model
+ * can fix a bad request, and burning the whole combo on it helps nobody.
+ */
+export const MODEL_SCOPED_ERROR_TEXTS = [
+  "not supported when using",
+  "is not supported for",
+  "model_not_found",
+  "model not found",
+  "model does not exist",
+  "model doesn't exist",
+  "unknown model",
+  "is not available",
+  "no access to",
+  "does not have access",
+  "do not have access",
+  "don't have access",
+  "not have access to",
+  "not entitled",
+  "reached its end of life",
+  "has been deprecated",
+  "model is deprecated",
+  "no longer available",
+  "unsupported model",
+];
+
 // Backward compat: COOLDOWN_MS object (used by index.js re-export)
 export const COOLDOWN_MS = {
   unauthorized: COOLDOWN.long,
