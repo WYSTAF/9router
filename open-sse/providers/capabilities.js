@@ -587,6 +587,17 @@ function getCustomCapsSource() {
 // limit from a UI round-trip silently rewriting engine behaviour.
 const CUSTOM_CAP_KEYS = ["vision", "pdf", "audioInput", "videoInput", "search", "tools", "reasoning"];
 
+// Custom (OpenAI-/Anthropic-compatible) node aliases always carry one of these
+// prefixes — see OPENAI_COMPATIBLE_PREFIX in shared/constants/providers.js.
+// Gating on them means a stale or hand-written customModels row can never
+// shadow a BUILT-IN provider's curated table (e.g. "anthropic"), which would
+// silently change routing for every request that does not use a custom node.
+const CUSTOM_PROVIDER_PREFIXES = ["openai-compatible-", "anthropic-compatible-", "custom-embedding-"];
+
+function isCustomProviderAlias(provider) {
+  return typeof provider === "string" && CUSTOM_PROVIDER_PREFIXES.some((p) => provider.startsWith(p));
+}
+
 /**
  * Overlay a user-declared capability set for a custom model.
  *
@@ -597,7 +608,7 @@ const CUSTOM_CAP_KEYS = ["vision", "pdf", "audioInput", "videoInput", "search", 
  * never smuggle in thinking/limit changes.
  */
 function withCustomCaps(resolved, provider, model, baseModel) {
-  if (!provider) return resolved;
+  if (!provider || !isCustomProviderAlias(provider)) return resolved;
   const source = getCustomCapsSource();
   if (!source) return resolved;
 
@@ -692,9 +703,9 @@ export function getCapabilitiesForModel(provider, model) {
   // (deepseek-v4 → thinkingFormat:deepseek, vision:false) must not win here.
   if (provider === "commandcode" || provider === "cmc") {
     const providerCaps = PROVIDER_CAPABILITIES.commandcode;
-    if (providerCaps?.[model]) return { ...DEFAULT_CAPABILITIES, ...providerCaps[model] };
-    if (providerCaps?.[baseModel]) return { ...DEFAULT_CAPABILITIES, ...providerCaps[baseModel] };
-    return {
+    if (providerCaps?.[model]) return withCustomCaps({ ...DEFAULT_CAPABILITIES, ...providerCaps[model] }, provider, model, baseModel);
+    if (providerCaps?.[baseModel]) return withCustomCaps({ ...DEFAULT_CAPABILITIES, ...providerCaps[baseModel] }, provider, model, baseModel);
+    return withCustomCaps({
       ...DEFAULT_CAPABILITIES,
       reasoning: true,
       thinkingFormat: "commandcode",
@@ -702,7 +713,7 @@ export function getCapabilitiesForModel(provider, model) {
       vision: !isCommandCodeTextOnly(model),
       contextWindow: 1000000,
       maxOutput: 384000,
-    };
+    }, provider, model, baseModel);
   }
 
   // 1. Provider-specific override
