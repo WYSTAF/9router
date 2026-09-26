@@ -574,7 +574,13 @@ let customCapsSource = null;
  */
 export function setCustomCapsSource(source) {
   customCapsSource = source;
-  if (typeof globalThis !== "undefined") globalThis.__9rCustomCapsSource = source;
+  // Clear the shared slot too when uninstalling. Leaving a torn-down reader on
+  // globalThis would let the next module copy (each route chunk gets its own
+  // copy of this file) resurrect it on first read.
+  if (typeof globalThis !== "undefined") {
+    if (source) globalThis.__9rCustomCapsSource = source;
+    else delete globalThis.__9rCustomCapsSource;
+  }
 }
 
 function getCustomCapsSource() {

@@ -128,4 +128,24 @@ describe("declaration is scoped and safe", () => {
     // Built-in tables keep working.
     expect(getCapabilitiesForModel("anthropic", "claude-opus-5.5").vision).toBe(true);
   });
+
+  it("uninstalling clears the shared globalThis slot too", () => {
+    // Each route chunk carries its own copy of this module, so the reader is
+    // published on globalThis. If teardown left it there, the next module copy
+    // would resurrect a reader the server had already torn down.
+    declareCaps({ vision: true });
+    expect(globalThis.__9rCustomCapsSource).toBeTruthy();
+    setCustomCapsSource(null);
+    expect(globalThis.__9rCustomCapsSource).toBeUndefined();
+  });
+
+  it("does not mutate the shared capability tables", () => {
+    declareCaps({ vision: false, contextWindow: 1 });
+    const a = getCapabilitiesForModel(CUSTOM, "claude-opus-5.5");
+    const b = getCapabilitiesForModel(CUSTOM, "claude-opus-5.5");
+    expect(a).not.toBe(b);                       // a fresh object each call
+    expect(a).toEqual(b);                        // and identical contents
+    // The built-in table is untouched.
+    expect(getCapabilitiesForModel("anthropic", "claude-opus-5.5").contextWindow).toBe(1000000);
+  });
 });
