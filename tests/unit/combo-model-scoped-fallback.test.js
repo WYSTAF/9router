@@ -47,6 +47,19 @@ describe("isModelScopedError", () => {
     expect(isModelScopedError(400, "invalid json body")).toBe(false);
   });
 
+  it("does NOT match availability wording that has nothing to do with the model", () => {
+    // A bare "is not available" would catch all of these and let a combo skip a
+    // member for the wrong reason. The phrases are anchored on "model" instead.
+    for (const text of [
+      "prompt is not available",
+      "region is not available",
+      "this content is not available",
+      "service temporarily unavailable",
+    ]) {
+      expect(isModelScopedError(400, text), text).toBe(false);
+    }
+  });
+
   it("never flags account-scoped statuses, even when the text mentions a model", () => {
     // A 403 on a specific slug is a permission problem: rotate the account,
     // not the model.
