@@ -16,6 +16,15 @@ describe("gemini-4-argon capabilities", () => {
     expect(c.thinkingFormat).toBe("gemini-level");
   });
 
+  it("has the announced 1M output limit, not the line's 64K", () => {
+    // Corrected after the announcement: Argon's output limit was raised to 1M,
+    // where every other Gemini entry carries 65536.
+    const argon = getCapabilitiesForModel("gemini", "gemini-4-argon");
+    const flash = getCapabilitiesForModel("gemini", "gemini-3.8-flash");
+    expect(argon.maxOutput).toBe(1048576);
+    expect(flash.maxOutput).toBe(65536);   // neighbours unchanged
+  });
+
   it("is NOT captured by the gemini-3 wildcard", () => {
     // Patterns match in order, so gemini-4 needs its own entry above *gemini-3*.
     const c4 = getCapabilitiesForModel("gemini", "gemini-4-argon");
